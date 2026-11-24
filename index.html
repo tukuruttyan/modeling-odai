@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モデリングお題</title>
+<style>
+  :root {
+    --bg: #f4f1ea; --fg: #22201c; --sub: #7a756b; --line: #d9d4c8; --card: #fffdf8;
+    --easy: #3f8f5b; --normal: #c98a1b; --hard: #c2452f;
+    --accent: var(--easy);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #17161a; --fg: #eeebe4; --sub: #8f8a80; --line: #33313a; --card: #201f25;
+      --easy: #5fbf82; --normal: #e6ab45; --hard: #ec6b54; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 32px; padding: 24px 16px;
+  }
+  body[data-level="easy"] { --accent: var(--easy); }
+  body[data-level="normal"] { --accent: var(--normal); }
+  body[data-level="hard"] { --accent: var(--hard); }
+
+  .levels { display: flex; gap: 8px; }
+  .levels button {
+    font: inherit; font-size: 15px; font-weight: 700; padding: 10px 20px; cursor: pointer;
+    color: var(--sub); background: transparent; border: 2px solid var(--line); border-radius: 999px;
+  }
+  .levels button[aria-pressed="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+
+  .card {
+    width: min(100%, 640px); min-height: 240px; padding: 32px 24px;
+    background: var(--card); border: 2px solid var(--line); border-top: 8px solid var(--accent);
+    border-radius: 16px; display: flex; align-items: center; justify-content: center; text-align: center;
+  }
+  #odai { font-size: clamp(32px, 9vw, 64px); font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+  #odai.empty { font-size: 18px; font-weight: 400; color: var(--sub); }
+
+  #next {
+    font: inherit; font-size: 20px; font-weight: 800; padding: 16px 48px; cursor: pointer;
+    color: var(--bg); background: var(--fg); border: 0; border-radius: 12px;
+  }
+  #next:active { transform: translateY(2px); }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+</style>
+</head>
+<body data-level="easy">
+  <div class="levels" role="group" aria-label="難易度">
+    <button type="button" data-level="easy" aria-pressed="true">かんたん</button>
+    <button type="button" data-level="normal" aria-pressed="false">ふつう</button>
+    <button type="button" data-level="hard" aria-pressed="false">むずかしい</button>
+  </div>
+
+  <div class="card"><div id="odai" class="empty" aria-live="polite">ボタンを押すとお題が出ます</div></div>
+
+  <button type="button" id="next">お題を出す</button>
+
+<script>
+const ODAI = {
+  easy: [
+    "りんご", "バナナ", "ドーナツ", "サイコロ", "マグカップ", "雪だるま", "きのこ", "たまご", "おにぎり", "鉛筆",
+    "風船", "ろうそく", "積み木", "ボウリングのピン", "コーン", "卵焼き", "バケツ", "消しゴム", "ハンマー", "植木鉢",
+    "本", "テーブル", "電球", "ソフトクリーム", "目玉焼き", "豆腐", "たる", "宝箱", "だんご", "プリン",
+    "おでん", "浮き輪", "コップ", "ピザ一切れ", "チーズ", "乾電池", "トイレットペーパー", "王冠", "鍵", "ホットケーキ"
+  ],
+  normal: [
+    "椅子", "ギター", "灯台", "ロケット", "ヨット", "風車", "サボテン", "ハンバーガー", "カメラ", "やかん",
+    "郵便ポスト", "信号機", "鳥居", "ショートケーキ", "ラーメン", "寿司", "潜水艦", "気球", "テント", "すべり台",
+    "ブランコ", "消火栓", "扇風機", "電子レンジ", "ヘッドホン", "ゲームコントローラー", "砂時計", "望遠鏡", "じょうろ", "スニーカー",
+    "トラック", "路面電車", "UFO", "剣と盾", "井戸", "かかし", "金魚鉢", "ランタン", "自動販売機", "こたつ",
+    "アヒル", "ペンギン", "カタツムリ", "クジラ", "ロボット"
+  ],
+  hard: [
+    "ドラゴン", "タコ", "自転車", "蒸気機関車", "観覧車", "ジェットコースター", "海賊船", "お城", "五重塔", "グランドピアノ",
+    "ミシン", "ドラムセット", "顕微鏡", "車いす", "ヘリコプター", "ショベルカー", "消防車", "バイク", "カマキリ", "クワガタ",
+    "ティラノサウルス", "馬", "キリン", "ゾウ", "ライオン", "クジャク", "タツノオトシゴ", "人間の手", "骸骨", "盆栽",
+    "シャンデリア", "鳥かご", "メリーゴーラウンド", "宇宙ステーション", "ゴシック大聖堂", "屋台", "茶室", "ツリーハウス", "サックス", "バイオリン",
+    "寝ている猫", "走っている人", "じゃんけんをする二人", "満員電車", "台風"
+  ]
+};
+
+const body = document.body;
+const odaiEl = document.getElementById("odai");
+const decks = {};
+
+function shuffled(list) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// 一巡するまで同じお題は出さない
+function draw(level) {
+  if (!decks[level] || decks[level].length === 0) {
+    const deck = shuffled(ODAI[level]);
+    if (deck[deck.length - 1] === odaiEl.textContent && deck.length > 1) deck.reverse();
+    decks[level] = deck;
+  }
+  return decks[level].pop();
+}
+
+function next() {
+  odaiEl.classList.remove("empty");
+  odaiEl.textContent = draw(body.dataset.level);
+  document.getElementById("next").textContent = "次のお題";
+}
+
+document.querySelectorAll(".levels button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    body.dataset.level = btn.dataset.level;
+    document.querySelectorAll(".levels button").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b === btn)));
+    next();
+  });
+});
+document.getElementById("next").addEventListener("click", next);
+</script>
+</body>
+</html>
